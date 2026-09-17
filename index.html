@@ -1232,6 +1232,11 @@ Retira del fuego, casca los huevos y remuévelos bien con la varilla. Sirve deco
 /* =========================================================
    ESTADO Y PERSISTENCIA
    ========================================================= */
+/* Conexión a Supabase integrada directamente, igual que en el resto de tus apps.
+   Si algún día quieres usar otro proyecto, cambia estas dos líneas. */
+const SUPABASE_URL = "https://bzjzedwbahgitunoksps.supabase.co";
+const SUPABASE_KEY = "sb_publishable_GwXGrJorusdd94VeHBH4Lg_C657Knj5";
+
 let recipes = [];
 let supabase = null;
 let filter = { q: "", cats: new Set() };
@@ -1242,9 +1247,11 @@ const LS_URL = "recetas_sb_url";
 const LS_KEY = "recetas_sb_key";
 
 function trySupabase(){
-  const url = localStorage.getItem(LS_URL);
-  const key = localStorage.getItem(LS_KEY);
-  if(url && key){
+  // Usa lo guardado en el navegador si existe (por si algún día cambias de proyecto),
+  // y si no, la conexión integrada de arriba.
+  const url = localStorage.getItem(LS_URL) || SUPABASE_URL;
+  const key = localStorage.getItem(LS_KEY) || SUPABASE_KEY;
+  if(url && key && typeof window.supabase !== "undefined"){
     try{ supabase = window.supabase.createClient(url, key); }catch(e){ supabase = null; }
   }
   updateSyncStatus();
@@ -1454,8 +1461,8 @@ document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click
 document.querySelectorAll(".backdrop").forEach(bd => bd.addEventListener("click", e => { if(e.target===bd) closeAllModals(); }));
 
 document.getElementById("btnSync").addEventListener("click", () => {
-  document.getElementById("sbUrl").value = localStorage.getItem(LS_URL) || "";
-  document.getElementById("sbKey").value = localStorage.getItem(LS_KEY) || "";
+  document.getElementById("sbUrl").value = localStorage.getItem(LS_URL) || SUPABASE_URL;
+  document.getElementById("sbKey").value = localStorage.getItem(LS_KEY) || SUPABASE_KEY;
   document.getElementById("settingsBackdrop").hidden = false;
 });
 document.getElementById("btnSaveSettings").addEventListener("click", async () => {
