@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recetas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🫒</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --paper:#efe8d6;
+    --paper-deep:#e6ddc4;
+    --ink:#26241f;
+    --ink-soft:#5a564a;
+    --moss:#333f2c;
+    --moss-light:#4c5c42;
+    --brick:#a13d28;
+    --brick-light:#c15436;
+    --mustard:#b98a1e;
+    --line:#d8cca8;
+    --card:#f7f2e4;
+    --radius-lg:22px;
+    --radius-sm:10px;
+    --shadow:0 1px 0 rgba(38,36,31,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, rgba(38,36,31,.05) 1px, transparent 0) 0 0/22px 22px,
+      var(--paper);
+    color:var(--ink);
+    font-family:'Archivo',sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    letter-spacing:-.01em;
+    margin:0;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  input,textarea,select{font-family:inherit;}
+
+  /* ---------- Layout shell ---------- */
+  #app{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+    flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:2px solid var(--line);
+    margin-bottom:20px;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand span{font-size:26px;}
+  .brand h1{font-size:34px;font-style:italic;color:var(--moss);}
+  .brand small{display:block;color:var(--ink-soft);font-size:12.5px;margin-top:2px;letter-spacing:.02em;}
+
+  .tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  #search{
+    background:var(--card);border:1.5px solid var(--line);border-radius:999px;
+    padding:10px 16px;font-size:14.5px;width:220px;color:var(--ink);
+  }
+  #search:focus{outline:none;border-color:var(--moss-light);}
+  .icon-btn{
+    width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);
+    background:var(--card);font-size:17px;display:flex;align-items:center;justify-content:center;
+    color:var(--moss);transition:background .15s;
+  }
+  .icon-btn:hover{background:var(--paper-deep);}
+  .btn-primary{
+    background:var(--brick);color:#fdf7ec;border:none;border-radius:999px;
+    padding:11px 20px;font-size:14.5px;font-weight:600;transition:background .15s;
+  }
+  .btn-primary:hover{background:var(--brick-light);}
+  .btn-ghost{
+    background:transparent;border:1.5px solid var(--line);color:var(--ink);
+    border-radius:999px;padding:10px 18px;font-size:14px;font-weight:500;
+  }
+  .btn-ghost:hover{border-color:var(--moss-light);}
+  .btn-danger{
+    background:transparent;color:var(--brick);border:1.5px solid var(--brick);
+    border-radius:999px;padding:10px 18px;font-size:14px;font-weight:600;
+  }
+  .btn-danger:hover{background:var(--brick);color:#fdf7ec;}
+
+  /* ---------- Filter chips ---------- */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px;}
+  .chip{
+    border:1.5px solid var(--line);background:var(--card);color:var(--ink-soft);
+    padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;
+    letter-spacing:.01em;transition:all .15s;
+  }
+  .chip:hover{border-color:var(--moss-light);}
+  .chip.active{background:var(--moss);border-color:var(--moss);color:#f4efdf;}
+
+  /* ---------- Grid & cards ---------- */
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:20px;
+  }
+  .rcard{
+    background:var(--card);border-radius:var(--radius-lg);overflow:hidden;
+    border:1px solid var(--line);cursor:pointer;
+    box-shadow:var(--shadow);
+    transition:transform .15s, box-shadow .15s;
+    display:flex;flex-direction:column;
+  }
+  .rcard:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(38,36,31,.10);}
+  .rcard-media{
+    height:150px;background:linear-gradient(135deg,var(--moss) 0%,var(--moss-light) 100%);
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .rcard-media img{width:100%;height:100%;object-fit:cover;}
+  .rcard-media svg{width:38px;height:38px;opacity:.55;}
+  .rcard-body{padding:16px 16px 18px;display:flex;flex-direction:column;gap:10px;flex:1;}
+  .rcard h3{font-size:19px;line-height:1.25;color:var(--ink);}
+  .rcard .pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;}
+  .pill{
+    font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--moss);
+    background:rgba(51,63,44,.09);padding:3px 9px;border-radius:999px;
+  }
+  .rcard .unfilled{font-size:12.5px;font-style:italic;color:var(--ink-soft);opacity:.75;}
+
+  .empty{text-align:center;color:var(--ink-soft);padding:60px 0;font-size:15px;}
+  .empty button{margin-left:8px;text-decoration:underline;background:none;border:none;color:var(--brick);font-size:15px;}
+
+  /* ---------- Modals ---------- */
+  .backdrop{
+    position:fixed;inset:0;background:rgba(38,36,31,.55);
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:40px 18px;overflow-y:auto;z-index:50;
+  }
+  .modal{
+    background:var(--paper);border-radius:26px;max-width:760px;width:100%;
+    padding:34px 38px 38px;position:relative;
+    box-shadow:0 30px 60px rgba(0,0,0,.3);
+  }
+  .modal.settings{max-width:520px;}
+  .close-x{
+    position:absolute;top:22px;right:24px;background:none;border:none;
+    font-size:22px;color:var(--ink-soft);line-height:1;
+  }
+  .close-x:hover{color:var(--ink);}
+
+  .view-cats{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 18px;}
+  .view-title{font-size:36px;font-style:italic;color:var(--moss);padding-right:30px;line-height:1.15;}
+  .view-cover{width:100%;max-height:280px;object-fit:cover;border-radius:16px;margin-bottom:22px;}
+  .view-cols{display:grid;grid-template-columns:220px 1fr;gap:32px;margin-top:8px;}
+  @media (max-width:620px){.view-cols{grid-template-columns:1fr;}}
+  .view-cols h4{
+    font-family:'Archivo',sans-serif;font-size:12px;text-transform:uppercase;
+    letter-spacing:.09em;color:var(--brick);font-weight:700;margin-bottom:12px;
+  }
+  .ing-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:9px;}
+  .ing-list li{
+    font-size:14.5px;padding-left:16px;position:relative;line-height:1.45;
+  }
+  .ing-list li:before{content:"–";position:absolute;left:0;color:var(--brick);}
+  .steps p{font-size:15.5px;line-height:1.7;margin:0 0 14px;color:var(--ink);}
+  .placeholder-note{
+    font-style:italic;color:var(--ink-soft);font-size:14px;
+    background:rgba(38,36,31,.05);padding:12px 16px;border-radius:12px;
+  }
+  .modal-actions{display:flex;gap:10px;margin-top:28px;padding-top:22px;border-top:1px solid var(--line);}
+
+  /* ---------- Form ---------- */
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-bottom:7px;}
+  .field input[type=text], .field input[type=url], .field textarea{
+    width:100%;border:1.5px solid var(--line);background:var(--card);border-radius:12px;
+    padding:11px 14px;font-size:14.5px;color:var(--ink);resize:vertical;
+  }
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--moss-light);}
+  .cat-grid{display:flex;flex-wrap:wrap;gap:7px;}
+  .cat-toggle{
+    border:1.5px solid var(--line);background:var(--card);border-radius:999px;
+    padding:6px 13px;font-size:12.5px;color:var(--ink-soft);
+  }
+  .cat-toggle.on{background:var(--moss);border-color:var(--moss);color:#f4efdf;}
+  .addcat-row{display:flex;gap:8px;margin-top:10px;}
+  .addcat-row input{flex:1;}
+
+  /* ---------- Settings modal ---------- */
+  .sync-status{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-soft);margin-bottom:20px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:#999;}
+  .dot.on{background:#4c7a3a;}
+  pre.sql{
+    background:var(--ink);color:#e9e2cc;padding:16px;border-radius:12px;
+    font-size:12px;overflow-x:auto;line-height:1.55;
+  }
+  .settings-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .hint{font-size:12.5px;color:var(--ink-soft);margin-top:6px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span>🫒</span>
+      <div>
+        <h1>Recetas</h1>
+        <small>El recetario de la cocina, siempre a mano</small>
+      </div>
+    </div>
+    <div class="tools">
+      <input id="search" type="text" placeholder="Buscar receta…">
+      <button class="icon-btn" id="btnSync" title="Sincronización">⚙</button>
+      <button class="btn-primary" id="btnNew">+ Nueva receta</button>
+    </div>
+  </header>
+
+  <nav class="chips" id="chips"></nav>
+
+  <main class="grid" id="grid"></main>
+  <p class="empty" id="emptyState" hidden>No hay ninguna receta que coincida.<button id="clearFilters">Quitar filtros</button></p>
+</div>
+
+<!-- View modal -->
+<div class="backdrop" id="viewBackdrop" hidden>
+  <div class="modal" id="viewModal">
+    <button class="close-x" data-close>×</button>
+    <img id="viewCover" class="view-cover" hidden>
+    <h2 class="view-title" id="viewTitle"></h2>
+    <div class="view-cats" id="viewCats"></div>
+    <div class="view-cols">
+      <div>
+        <h4>Ingredientes</h4>
+        <ul class="ing-list" id="viewIng"></ul>
+      </div>
+      <div>
+        <h4>Elaboración</h4>
+        <div class="steps" id="viewSteps"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="btnEditFromView">Editar</button>
+      <button class="btn-danger" id="btnDeleteFromView">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="backdrop" id="editBackdrop" hidden>
+  <div class="modal">
+    <button class="close-x" data-close>×</button>
+    <h2 class="display" style="font-size:26px;margin-bottom:22px;" id="editHeading">Nueva receta</h2>
+    <div class="field">
+      <label>Nombre</label>
+      <input type="text" id="fNombre" placeholder="p. ej. Porrusalda">
+    </div>
+    <div class="field">
+      <label>Foto (URL de imagen, opcional)</label>
+      <input type="url" id="fImagen" placeholder="https://…">
+    </div>
+    <div class="field">
+      <label>Categorías</label>
+      <div class="cat-grid" id="fCatGrid"></div>
+      <div class="addcat-row">
+        <input type="text" id="fCatNew" placeholder="Añadir categoría nueva…">
+        <button class="btn-ghost" id="fCatAdd">Añadir</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Ingredientes (una línea por ingrediente)</label>
+      <textarea id="fIng" rows="6" placeholder="- 500 gr de patata&#10;- 2 puerros&#10;- sal"></textarea>
+    </div>
+    <div class="field">
+      <label>Elaboración</label>
+      <textarea id="fReceta" rows="9" placeholder="Describe los pasos de la receta…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="btnSaveRecipe">Guardar receta</button>
+      <button class="btn-ghost" data-close>Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="backdrop" id="settingsBackdrop" hidden>
+  <div class="modal settings">
+    <button class="close-x" data-close>×</button>
+    <h2 class="display" style="font-size:24px;margin-bottom:16px;">Sincronización</h2>
+    <div class="sync-status"><span class="dot" id="syncDot"></span><span id="syncText">Guardando solo en este navegador</span></div>
+    <div class="field">
+      <label>Supabase URL</label>
+      <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
+    </div>
+    <div class="field">
+      <label>Supabase anon key</label>
+      <input type="text" id="sbKey" placeholder="eyJhbGciOi...">
+    </div>
+    <p class="hint">Crea antes esta tabla en el SQL Editor de Supabase:</p>
+    <pre class="sql">create table if not exists public.recetas_store (
+  id text primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.recetas_store enable row level security;
+
+create policy "allow all recetas"
+on public.recetas_store for all
+using (true) with check (true);</pre>
+    <div class="settings-actions">
+      <button class="btn-primary" id="btnSaveSettings">Guardar y conectar</button>
+      <button class="btn-ghost" id="btnDisconnect">Usar solo local</button>
+    </div>
+    <div class="settings-actions">
+      <button class="btn-ghost" id="btnExport">Exportar copia (.json)</button>
+      <button class="btn-ghost" id="btnImportTrigger">Importar copia</button>
+      <input type="file" id="btnImportFile" accept=".json" hidden>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   DATOS INICIALES
+   8 recetas importadas por completo desde Notion.
+   El resto ya tiene nombre y categorías correctas; edítalas
+   para añadir ingredientes y elaboración.
+   ========================================================= */
+const MASTER_CATS = ["POSTRE","QUESO","DULCE","PRINCIPAL","PESCADO","SALSA","BIZKAINA","SOPA","ENTRANTE","PATO","ENCURTIDO","ENSALADA","CHOCOLATE","SIFON","PATATA","GUISO","MARISCO","VERDURAS","CARNE","ARROZ","BAJA TEMPERATURA","ASADO","HUEVO"];
+
+function R(nombre, categorias, ingredientes, receta){
+  return {id:crypto.randomUUID(), nombre, categorias, ingredientes:ingredientes||"", receta:receta||"", imagen:""};
+}
+
+const SEED = [
+R("TIRAMISU PARA MENU",["DULCE","POSTRE"],
+`- 800 gr queso crema
+- 650 gr de azúcar
+- 1 L de nata
+- Café
+- Disaronno
+- Bizcochos de soletilla
+- Cacao en polvo`,
+`Hacer en dos tandas: 400 gr de queso + 325 gr de azúcar + 1/2 L de nata. Poner en la Thermomix y semimontar todo.
+
+Por otro lado hacer café solo y añadir un chorrito de Disaronno.
+
+En una gastronor, poner los bizcochos pasados por el café cubriendo toda la base. Cubrir suavemente con la crema de queso. Volver a poner otra capa de bizcochos y la otra tanda de crema de queso.
+
+Para servir: sacar la ración y espolvorear cacao por encima.`),
+
+R("SIFON FRESA",["POSTRE","DULCE","SIFON"],
+`- 700 gr de pulpa de fresa
+- 300 gr de agua
+- 8 gr de gelatina`,
+`Todo a la Thermomix, 37ºC, velocidad 6, hasta que coja temperatura.
+
+Colar antes de meter al sifón.`),
+
+R("YEMA EMULSIONADA",["HUEVO"],
+`- 200 gr de yema de huevo
+- 2 gr de sal`,
+`1. Bate las yemas con la sal enérgicamente.
+2. Pasa a una bolsa de vacío, quítale el aire con la selladora y cocina a baja temperatura 65°C durante 2 horas.
+3. Pasado el tiempo, pasa la bolsa por agua fría y deja en la nevera un par de horas.
+4. Pasa la emulsión a una manga pastelera. ¡Y lista para usar!`),
+
+R("TOFFE",["DULCE","POSTRE"],
+`- 50 gr de azúcar
+- 200 ml de nata`,
+`Pon un cazo al fuego y añade el azúcar. Deja que se caliente hasta que cristalice y se funda, formando un caramelo tostado. Vigila que no se queme, quedaría amargo.
+
+Agrega la nata templada con cuidado y remueve al fuego hasta que quede homogéneo. Con la nata templada es más fácil que se integre; cuidado porque puede hervir fuerte y desbordarse.`),
+
+R("YEMA CURADA EN SOJA",["HUEVO"],
+`- 4 yemas de huevo
+- Soja, la cantidad necesaria para cubrir`,
+`Cubrir las yemas con soja. Dejar macerar 3 horas — si se dejan más tiempo quedarán más duras y se podrán usar para otra elaboración.`),
+
+R("SOPA DE AJO",[],
+`Para 6-8 personas:
+- 1/2 barra de pan tostado
+- 6 dientes de ajo
+- 1 cucharadita de pimentón
+- 1 cucharadita de carne de pimiento choricero
+- 2 huevos
+- Aceite virgen extra
+- Sal
+Para el caldo:
+- 2 puerros
+- 1 zanahoria
+- 6 dientes de ajo
+- Unas ramas de perejil
+- 1,5 L de agua
+- Sal`,
+`Limpia las verduras del caldo y cuécelas en la olla rápida. Sazona, cierra la tapa y deja cocer 5 minutos.
+
+Pon un poco de aceite en una cazuela, añade los dientes de ajo pelados y enteros y dóralos. Corta el pan en rebanadas finas e incorpóralas. Añade el pimentón y rehoga brevemente.
+
+Agrega la carne de pimiento choricero y el caldo colado. Sazona y remueve bien con una varilla hasta deshacer el pan. Deja cocer 20 minutos.
+
+Casca los huevos e incorpóralos, mezcla bien, ajusta de sal y sirve en una sopera.`),
+
+R("BROWNIE DE CHOCOLATE",["POSTRE","CHOCOLATE"],
+`- 150 gr de chocolate negro
+- 200 gr de mantequilla
+- 200 gr de azúcar
+- 80 gr de harina
+- 4 huevos
+- 10 nueces`,
+`Bate los huevos con las varillas e incorpora el azúcar poco a poco hasta que quede integrado. Reserva.
+
+Trocea el chocolate y la mantequilla en un bol de cristal y funde al baño maría poco a poco, removiendo con cuidado.
+
+Cuando esté fundido, viértelo sobre la mezcla de huevos y azúcar y remueve. Incorpora la harina poco a poco sin que queden grumos y añade las nueces troceadas.
+
+Unta un molde, enharínalo y vierte la mezcla. Hornea a 180ºC durante 40 minutos. Deja templar antes de desmoldar.`),
+
+R("AJOBLANCO MALAGUEÑO",["ENTRANTE"],
+`- 375 gr de pasta de almendra cruda
+- 812,5 gr de agua mineral
+- 12,5 gr de ajo escaldado
+- 18,75 gr de vinagre de Jerez 25 años
+- 12,5 gr de sal fina
+- 37,5 gr de aceite de oliva virgen extra
+- 1,5 gr de xantana`,
+`1. Pon todos los ingredientes en la Thermomix, excepto la xantana, y tritura a máxima potencia 5 minutos.
+2. Pásalo por un chino fino y por una estameña.
+3. Liga el ajoblanco con la xantana usando un túrmix de mano.
+4. Reserva en frío hasta el momento de usar.`),
+
+R("ALCACHOFAS AL VACIO",["ENTRANTE","VERDURAS"],
+`- Alcachofas limpias
+- Aceite de oliva suave`,
+`1. Envasamos las alcachofas con el aceite al 100%.
+2. Debemos colocar las alcachofas muy bien en la bolsa para que no sufran al envasarlas.
+3. Cocinamos en un horno al vapor a 90º durante 35 minutos.
+4. Pasado el tiempo, refrescar en un baño maría inverso.
+5. Reservar.`),
+
+R("ALUBIAS DE TOLOSA",["PRINCIPAL","ENTRANTE"],
+`- 500 gr de alubias de Tolosa
+- 200 gr de panceta
+- 2 dientes de ajo
+- 1 morcilla de cebolla
+- 1 chorizo
+- 1 hueso de jamón
+- 1 cebolla
+- Piparras
+- 1 cucharada de pimentón dulce
+- Aceite de oliva
+- Sal`,
+`Poner las alubias en remojo la noche anterior. Al día siguiente, escurrir y disponerlas en una cazuela grande junto con 1 diente de ajo entero, la tira de panceta y el hueso de jamón.
+
+Cubrir con agua, echar un chorro de aceite y poner al fuego. Dejar que hierva. Despumar, bajar el fuego y cocer durante unas 2 horas. Remover de vez en cuando la cazuela por las asas, pero sin introducir ninguna cuchara para que las alubias no se deshagan.
+
+A mitad de la cocción incorporar la morcilla y el chorizo cortados en rodajas, y seguir cocinando lentamente.
+
+Aparte, sofreír en una sartén con un chorro de aceite la cebolla cortada en dados y el otro diente de ajo picado hasta que estén pochados. Espolvorear con el pimentón, remover y verter en la cazuela. Unos 15 minutos antes de terminar la cocción, poner a punto de sal.
+
+Dejar reposar antes de servir y acompañar el plato con unas piparras.`),
+
+R("ARROZ CALDOSO DE POLLO",["ENTRANTE","ARROZ"],
+`- 300 gr de arroz
+- 2 muslos de pollo (deshuesados)
+- 1 cebolleta
+- 1 puerro
+- 1 pimiento verde
+- 1 zanahoria
+- 3 alcachofas
+- 8 champiñones
+- 2 dientes de ajo
+- 1 cucharada de tomate concentrado
+- 100 ml de vino blanco
+- 1.200 ml de caldo de pollo
+- Aceite de oliva virgen extra
+- Sal, pimienta
+- 1 cucharadita de pimentón
+- Perejil`,
+`Calienta una tartera con 3-4 cucharadas de aceite. Pela los ajos, córtalos en daditos e introdúcelos. Corta la cebolleta en daditos, incorpórala y rehógala a fuego medio 5-6 minutos.
+
+Pela la zanahoria y córtala en cuartos de luna finos. Corta el pimiento en dados. Limpia el puerro y córtalo también en cuartos de luna finos. Pela las alcachofas y córtalas en dados. Introduce las hortalizas, sazona y rehoga a fuego medio 10 minutos.
+
+Enjuaga los champiñones, córtalos en daditos, añádelos y cocina 3-4 minutos más.
+
+Corta el pollo en dados, salpimiéntalo e incorpóralo. Agrega el tomate concentrado, el pimentón y el vino. Añade el arroz y el caldo, ajusta de sal y cocina a fuego medio 18-20 minutos.
+
+Reparte el arroz en 4 platos y decora con unas hojas de perejil.`),
+
+R("ARROZ CON LECHE",["POSTRE","DULCE"],
+`- 60 gr de arroz por litro
+- 75 gr de azúcar por litro
+- 1 litro de leche
+- 1/2 litro de nata
+- Canela
+- Peladura de naranja y limón`,
+`Poner el arroz con un poquito de agua, la canela y la fruta. Después de un rato ir añadiendo la leche y la nata a poco (2/1) y el azúcar.
+
+Remover, remover y remover.`),
+
+R("ARROZ CON BOGAVANTE Y LANGOSTINOS",["PESCADO","ENTRANTE","MARISCO"],
+`- 300 gr de arroz bomba
+- 2 L de caldo de pescado
+- 1 cucharada de pimentón
+- 6 langostinos
+- 1 bogavante
+- 2 zanahorias
+- 2 dientes de ajo
+- Salsa de tomate
+- Brandy
+- Aceite de oliva, sal`,
+`1. Pelar los langostinos y reservar las colas.
+2. Poner aceite en una cazuela, añadir los ajos y las cabezas de los langostinos. Sazonar y cocer para que salgan los jugos. Triturar, colar y reservar.
+3. Partir por la mitad el bogavante vivo. Flambear en una sartén con brandy. Reservar.
+4. Rehogar las zanahorias peladas y picadas. Agregar el pimentón y salsa de tomate. Incorporar el arroz y remover. Añadir los jugos del bogavante y el triturado de langostinos, remover de nuevo y mojar con el caldo de pescado. Cocer 10 min y añadir el bogavante.
+5. Unos 5 min antes de apagar el fuego, añadir los langostinos. Tapar unos minutos antes de servir.`),
+
+R("ARROZ CREMOSO DE GAMBAS",["PESCADO","ENTRANTE","ARROZ"],
+`- 400 gr de arroz
+- 400 gr de gambas
+- 2 ñoras
+- 1 cebolleta
+- 1 pimiento verde
+- 1/2 pimiento rojo pelado
+- 2 dientes de ajo
+- 2 tomates maduros pequeños
+- 1,6 L de caldo de gambas
+- Aceite de oliva, sal
+- 1/2 cucharadita de azafrán en polvo
+- Perejil`,
+`Calienta 3-4 cucharadas de aceite en una tartera. Pica los ajos y la cebolleta y rehógalos 4-5 minutos. Trocea las ñoras y los pimientos y agrégalos. Añade los tomates en dados. Sazona y cocina las hortalizas 15 minutos.
+
+Pásalas a un vaso batidor con parte del caldo y tritúralas.
+
+Rehoga el arroz en la misma tartera con 2 cucharadas de aceite. Añade las verduras trituradas, el azafrán y el caldo. Cocina removiendo de vez en cuando 18 minutos.
+
+Sazona las gambas, introdúcelas, mezcla suavemente 1 minuto, apaga el fuego y sirve decorando con perejil.`),
+
+R("BACALAO AJOARRIERO",["PESCADO","ENTRANTE"],
+`- 400 gr de bacalao desmigado
+- 1 cebolleta
+- 1 pimiento verde
+- 1 pimiento rojo
+- 2 dientes de ajo
+- 4 cucharadas de aceite
+- 1 cayena
+- Sal
+- Tomate frito`,
+`Cortar la verdura en brunoise. Dorar los ajos y añadir la verdura. Sazonar y rehogar 15 min. Agregar la cayena, el bacalao y el tomate, y cocinar 5 min.`),
+
+R("BEGUIS EN TINTA",["PRINCIPAL","PESCADO"],
+`- Por kg de txipirón:
+- 0,80 kg de cebolla
+- 0,45 kg de pimiento verde
+- 0,24 kg de zanahoria
+- 2/3 de cabeza de ajo por cada 15 kg de txipirón
+- Chorrito de aceite, sal
+- Tomate triturado (un bote pequeño por cada 15 kg)`,
+`Poner al fuego los ajos con un poco de aceite; cuando empiece a coger color, añadir la verdura y pochar a fuego medio con un puñado de sal, primero tapado y, cuando haya soltado el agua, sin tapa. Cuando esté bien pochado y se haya evaporado parte del agua, añadir el tomate. Cocinar unos minutos y triturar muy bien colándolo. Reservar.
+
+Trocear los txipirones y, cuando estén todos, ponerlos en una olla tapada a fuego medio-alto, moviendo continuamente. Cuando suelten el agua y empiecen a ponerse rosados, añadir la crema de verduras y cocinar hasta que estén hechos.
+
+Corregir de sal y añadir la tinta. Cocinar unos 15 min para que se cocine la tinta y luego cambiar de recipiente y enfriar lo más rápido posible.`),
+
+R("BISCUIT GLACÉ (BERRI)",["POSTRE","DULCE"],
+`- 8 huevos
+- 400 gr de azúcar
+- 125 gr de agua
+- 750 gr de nata`,
+`Semimontar la nata y reservar en frío.
+
+Poner en la Thermomix los huevos, el agua y el azúcar: velocidad 3, 100º, 10 minutos.
+
+Cuando atempere un poco, mezclar con la nata suavemente. Poner en moldes y meter al congelador.`),
+
+R("BROWNIE DE CHOCOLATE EN EL MICROONDAS",["POSTRE","CHOCOLATE"],
+`- 3 huevos
+- 100 gr de azúcar
+- 125 gr de chocolate negro para postres
+- 125 gr de mantequilla
+- 70 gr de harina
+- 1/2 sobre de levadura química (8 gr)
+- 1 cucharada de cacao en polvo
+- 3 cucharadas de leche
+- 50 gr de nueces troceadas
+- Azúcar glas para decorar (opcional)`,
+`Pon el chocolate y la mantequilla en un bol y fúndelos en el microondas en unos 3 minutos, sacando el bol cada 30 segundos para remover. Reserva.
+
+Bate los huevos con el azúcar, añade el chocolate fundido y mezcla bien.
+
+Mezcla la harina, la levadura y el cacao, añádelos junto con la leche y las nueces troceadas.
+
+Unta un molde con mantequilla, vierte la masa y mete al microondas 5 minutos y medio a 750W.
+
+Deja reposar hasta que enfríe, desmolda y corta en porciones. Si quieres, espolvorea azúcar glas para decorar.`),
+
+R("BUÑUELOS DE BACALAO",["PESCADO","ENTRANTE"],
+`- 250 gr de bacalao
+- 250 ml de leche
+- 125 gr de harina
+- 5 huevos
+- 125 gr de mantequilla
+- 4 dientes de ajo
+- Cebolla, perejil`,
+`Pochar la cebolla con los ajos. Poner la leche más la mantequilla, luego añadir los ajos y la cebolla. Añadir la harina y, cuando esté como una masa, ir incorporando los huevos de uno en uno y luego el bacalao.
+
+Freír bolas de la masa a 185 grados.`),
+
+R("CABRITO AL HORNO",["ASADO","CARNE"],
+`- 1,5 kg de cabrito
+- 1 hoja de laurel
+- 1 cabeza de ajos
+- 1/2 guindilla
+- 1 vaso de whisky
+- Vinagre
+- 1/2 litro de agua
+- Aceite y sal`,
+`Majar el ajo, perejil, laurel y guindilla. Añadir el whisky, el vinagre, el agua y el pimentón.
+
+Salpimentar, colocar las costillas visibles y pintar con aceite. Hornear 90 min a 180º. Cada 15 min pintar con el majado, y a los 45 min dar la vuelta.`),
+
+R("CALDERETA DE PESCADO Y MARISCO",["SOPA","PESCADO","MARISCO"],
+`- 350 gr de merluza limpia
+- 350 gr de rape limpio
+- 350 gr de salmón limpio
+- 4 langostinos pelados
+- 4 calamares limpios
+- 12 almejas
+- 1 cebolleta
+- 2 dientes de ajo
+- 100 ml de vino blanco
+- 5 cucharadas de salsa de tomate
+- 2 cucharadas de tomate concentrado
+- Harina (para rebozar)
+- 1 L de caldo para paella
+- Aceite de oliva virgen extra
+- Sal, pimienta, perejil`,
+`Calienta una tartera con 4-6 cucharadas de aceite. Corta el pescado en medallones, salpimiéntalos y enharínalos. Fríelos brevemente por los 2 lados y resérvalos.
+
+Pica los ajos y la cebolleta, sazona y rehoga 8-10 minutos. Corta los calamares en anillas y trozos, sazónalos, rehógalos 1-2 minutos a fuego fuerte.
+
+Vierte el vino y deja hervir fuerte. Agrega el tomate concentrado, la salsa de tomate y el caldo. Tapa y cocina 8-10 minutos hasta que los calamares estén tiernos.
+
+Introduce las almejas, los langostinos partidos por la mitad, el rape, el salmón y la merluza. Espolvorea con perejil, tapa y cocina 1 minuto más. Sirve decorando con perejil.`),
+
+R("CARACOLES",["BIZKAINA","SALSA","ENTRANTE"],
+`- 4 cebollas
+- 8 chorizos
+- 750 gr de jamón
+- 1 L de salsa bizkaina`,
+`Pochar la cebolla cortada en brunoise. Añadir el chorizo y el jamón cortados en taquitos pequeños. Añadir la bizkaina y cocinar un rato.
+
+Sacar del fuego. Cuando esté templado, añadir los caracoles (ya limpios). Guardar y terminar de cocinar al servir.`),
+
+R("CARRILLERAS DE CERDO CON PURÉ DE PATATA",["GUISO","CARNE"],
+`- 12 carrilleras de cerdo
+- 2 cebollas
+- 2 zanahorias
+- 1 puerro
+- 4 dientes de ajo
+- 3 patatas
+- 100 ml de nata líquida (o leche)
+- 150 ml de brandy
+- 20 gr de mantequilla
+- 1 cucharada de harina
+- 750 ml de caldo de carne
+- Aceite de oliva virgen extra, sal, pimienta
+- 1 rama de tomillo, 1 de romero, perejil`,
+`Calienta 4 cucharadas de aceite. Limpia las carrilleras, salpimiéntalas y dóralas bien por todos los lados. Resérvalas.
+
+Pela y corta las cebollas y zanahorias, limpia el puerro y corta todo en trozos. Cocina las hortalizas 12-15 minutos. Añade el brandy y deja que evapore el alcohol.
+
+Aplasta los ajos con piel, añade un atadillo de tomillo, romero y perejil, y cubre las carrilleras con las hortalizas. Vierte el caldo y hornea a 160ºC durante 90 minutos.
+
+Cuela las hortalizas y reserva el caldo. Funde la mantequilla con la harina, añade el caldo colado y cocina 4-5 minutos removiendo hasta ligar la salsa.
+
+Cuece las patatas, pélalas y haz un puré con la nata. Sirve el puré en el fondo del plato, coloca las carrilleras encima y salsea. Decora con perejil.`),
+
+R("COCHINILLO CONFITADO",["CARNE"],
+`- Un cochinillo
+- Aceite de oliva suave
+- Pimienta en grano
+- Peladura de naranja`,
+`Confitar en el horno a 125º durante 3 horas y media.`),
+
+R("COSTILLA A BAJA TEMPERATURA",["CARNE","BAJA TEMPERATURA"],
+`- Costilla
+- Soja`,
+`Poner en bolsa de vacío con un poco de soja. Hornear 12 horas a 70º.`),
+
+R("COULIS DE NARANJA",["DULCE"],
+`- 1 vaso de zumo de naranja
+- 1 cucharada de azúcar
+- 1 cucharada de zumo de limón
+- 1 cucharada de fécula de maíz
+- Agua`,
+`Poner a hervir el zumo en un cazo, agregar el zumo de limón y el azúcar. Mojar la fécula de maíz con agua e incorporar. Remover hasta tener el espesor deseado. Abatir.`),
+
+R("CREMA DE HONGOS CON YEMA A BAJA TEMPERATURA",["ENTRANTE","BAJA TEMPERATURA"],
+`- 1 vaso de nata
+- Yema a baja temperatura
+- 1 cebolleta
+- 1 puñado de hongos
+- Cebollino`,
+`Cortamos la cebolleta en juliana fina y la ponemos a pochar en un cazo con aceite. Añadimos los hongos troceados, la nata y un poco de sal. Dejamos cocinar 20-25 minutos.
+
+Pasado el tiempo, trituramos la crema. Emplatamos la crema de hongos y, en el centro, colocamos la yema a baja temperatura. Echamos un poco de cebollino picado por encima.`),
+
+R("CREMA PASTELERA",["POSTRE","DULCE"],
+`- 200 gr de azúcar
+- 70 gr de maicena
+- 8 yemas
+- 1 litro de leche
+- Peladura de naranja y limón, rama de vainilla`,
+`Infusionar la leche con las peladuras y la vainilla. Mientras se calienta la leche, mezclar el resto muy bien. Añadir a la leche y remover hasta que tenga el espesor deseado.`),
+
+R("CROQUETAS DE BACALAO",["ENTRANTE","PESCADO"],
+`- 4,5 L de leche
+- 1,5 kg de migas de bacalao escurrido
+- 580 gr de harina
+- 285 gr de mantequilla
+- 285 gr de aceite de ajo
+- 100 gr de gelatina`,
+`Derretir la mantequilla con el aceite de ajo. Mientras, poner a calentar la leche sin que se pegue, y si tenemos pieles de bacalao las añadimos.
+
+Añadir el bacalao escurrido al aceite y cocinar un poco, luego añadir la harina y cocinarla bien. Quitar del fuego hasta que hierva la leche; en ese momento volver a poner al fuego, añadir la leche y remover.
+
+Cocinar hasta que espese; añadir entonces la gelatina, mover bien y abatir.`),
+
+R("CROQUETAS DE JAMÓN",["ENTRANTE"],
+`- 750 gr de birutas de jamón
+- 105 gr de gelatina en polvo
+- 5 litros de leche
+- 600 gr de harina
+- 600 gr de mantequilla`,
+`Derretir la mantequilla, añadir las birutas de jamón hasta que suden bien a fuego suave. Mientras, poner la leche a calentar removiendo para que no se pegue, e hidratar la gelatina con la misma cantidad de agua.
+
+Cuando el jamón haya sudado bien, añadir la harina y cocinarla bien. Sacar del fuego hasta que hierva la leche; volver a poner al fuego, añadir la leche y remover.
+
+Cocinar hasta que espese, añadir la gelatina, mover bien y abatir.`),
+
+R("CRUMBLE",["POSTRE","DULCE"],
+`- 1 kg de harina
+- 1 kg de harina de almendra
+- 1 kg de mantequilla
+- 1 kg de azúcar`,
+`Mezclar todo muy bien, separar en bandejas con papel sulfurizado, repartiendo la mezcla en partes iguales. Hornear a 180º en seco hasta que esté tostado.`),
+
+R("ESPÁRRAGOS FRESCOS",["VERDURAS","BAJA TEMPERATURA"],
+`- Espárragos frescos
+- Azúcar, sal
+- AOVE
+- Bolsa de vacío`,
+`1. Cortar los espárragos por donde doblen.
+2. Pelarlos bien para que no queden fibras.
+3. Meterlos por ración en bolsas al vacío con una pizca de sal, otra de azúcar y un chorrito de AOVE.
+4. Meter al Roner 40 min a 85º.
+5. Enfriar con hielo para cortar la cocción.
+6. Para servir: marcarlos a la plancha para que doren un poco y luego un par de minutos al horno.`),
+
+R("FALDA A BAJA TEMPERATURA",["CARNE","BAJA TEMPERATURA"],
+`- Falda
+- Soja`,
+`Poner en bolsa de vacío con un poco de soja. Hornear 15 horas a 73º.`),
+
+R("FLAN DE HUEVO",["POSTRE"],
+`- 1 litro de leche
+- 150 gr de azúcar
+- 8 yemas
+- 2 huevos
+- Azúcar para caramelo`,
+`Hacer el caramelo y ponerlo en las flaneras. Mezclar las yemas, huevos y azúcar y batir bien; añadir la leche e integrar todo muy bien.
+
+Poner en las flaneras y meter al horno al baño maría, 30 min a 180º.`),
+
+R("FLAN DE QUESO",["POSTRE","QUESO"],
+`- 1 L de leche
+- 500 gr de nata
+- 350 gr de queso crema
+- 200 gr de azúcar
+- 10 gr de gelatina
+- Azúcar para el caramelo`,
+`Todo a la Thermomix, 5 seg a v6. Poner a v2,5 a 85 grados. Mientras, hacer caramelo y echarlo en 17 flaneras.
+
+Cuando alcance los 85 grados, echar en las flaneras.`),
+
+R("FOIE",["ENTRANTE","PATO"],
+`- Por cada kg de foie:
+- 13 gr de sal
+- 1,5 gr de pimienta
+- 3 gr de azúcar
+- Brandy o coñac`,
+`Marinar bien el foie con todos los ingredientes y añadir un chorro de brandy. Hacer rulos del tamaño deseado y envasarlos al vacío.
+
+Cocinarlos al vapor 13 min a 67º. Enfriar en agua con hielo sin que se apelmacen.`),
+
+R("HAMBURGUESA RAMSEY",["CARNE"],
+`- 500 gr de carne picada 80/20
+- 1 cucharadita de sal
+- 1 cucharadita de pimienta
+- 1 y 1/2 cucharadita de mostaza
+- 1 cucharadita de Perrins
+- 2 yemas de huevo
+- 2 cucharadas de ketchup
+- 1 cebolla roja picada`,
+``),
+
+R("INTXAURSALSA",["POSTRE"],
+`- 220 gr de nueces peladas (+ 4 para decorar)
+- 1/2 litro de leche
+- 1/2 litro de nata líquida
+- 2 ramas de canela
+- 1 cucharada de canela en polvo
+- 150 gr de azúcar
+- 1 pizca de sal
+- 50 ml de licor de nuez (o almendra)
+- Hojas de menta`,
+`Tritura las nueces (reservando 8 medias para decorar) con el azúcar.
+
+Pon la leche y la nata en una cazuela con la sal, el licor y las 2 ramas de canela. Calienta a fuego suave hasta que hierva, apaga y deja reposar 10 minutos.
+
+Retira las canelas, vuelve a calentar y agrega la mezcla de nueces y azúcar. Cocina a fuego suave removiendo hasta que espese (8-10 minutos). Deja templar.
+
+Sirve en copas, espolvorea con canela y decora con las medias nueces y unas hojas de menta.`),
+
+R("KOFTAS DE CORDERO (ALBÓNDIGAS DE CORDERO)",["CARNE","PRINCIPAL"],
+`- Aceite de oliva
+- 1 cebolla pelada y finamente picada
+- 2 dientes de ajo pelados y machacados
+- 2 cdtas. de semillas de comino tostado y molido
+- Hojuelas de chile al gusto
+- 500 gr de carne de cordero picada
+- 2 cdas. de perejil picado
+- 2 cdas. de menta picada
+- Sal marina y pimienta negra
+Para la salsa:
+- Hojas de un manojo de menta
+- 1/2 cdta. de semillas de comino tostadas
+- 2-3 cdas. de yogur natural
+- Pimienta negra
+- 1 cda. de zumo de limón`,
+`1. Calentar un poco de aceite y saltear la cebolla y el ajo hasta que estén tiernos. Añadir el comino y el chile y saltear 2 minutos. Dejar enfriar.
+2. Poner el cordero en un bol, añadir la mezcla de cebolla y hierbas con un chorrito de aceite, sal y pimienta. Mezclar bien con las manos.
+3. Formar bolas del tamaño de una pelota de golf y aplanarlas en hamburguesas de 1 cm. Rociar con aceite, cubrir y enfriar 10 minutos en la nevera.
+4. Preparar la salsa: picar la menta en un mortero, añadir el resto de ingredientes, mezclar y rectificar de sal.
+5. Freír las koftas en plancha caliente 5-6 minutos, dándoles la vuelta a mitad de cocción.
+6. Servir calientes con la salsa al lado.
+
+Consejo: para picar el cordero en casa, usa paletilla, falda o cuello y pica por etapas con la hoja afilada del robot para que no quede demasiado aglutinado.`),
+
+R("LECHE FRITA (BERRI)",["DULCE","POSTRE"],
+`- 1,5 L de leche
+- 300 gr de azúcar
+- 150 gr de maicena
+- 1 rama de canela
+- Corteza de limón y naranja`,
+`Reservar un poco de leche para luego añadir la maicena. Infusionar el resto de la leche con la canela, el azúcar y las cortezas de limón y naranja. Colar.
+
+Mezclar la leche reservada con la maicena y añadirla a la leche caliente. Poner al fuego y dejar hervir hasta que espese.
+
+Echar en el molde y dejar enfriar.`),
+
+R("LEMON PIE",["POSTRE"],
+`- 480 gr de azúcar
+- 240 gr de jugo de limón
+- Ralladura de esos limones
+- 12 huevos
+- 160 gr de margarina`,
+`Todo a la Thermomix, 100 grados a velocidad 3,5, hasta que espese y llegue a temperatura.`),
+
+R("MASA PARA COCAS",[],
+`- 50 gr de AOVE
+- 100 gr de agua
+- 50 gr de manteca (girasol)
+- 20 gr de levadura
+- 300 gr de harina
+- Azúcar y sal`,
+`Poner en la Thermomix los líquidos, una pizca de sal y la manteca: 30 seg a velocidad 2. Añadir la levadura, la harina y una pizca de azúcar: 15 seg a velocidad 6.
+
+Dejar en nevera 2 horas. Amasar y dar forma. Hornear a 185º hasta que estén dorados.`),
+
+R("MAYOBURGUER",["SALSA"],
+`- 12 gr de ajo en polvo
+- 30 gr de ketchup
+- 45 gr de salsa HP
+- 750 gr de mayonesa`,
+`Mezclar todo muy bien.`),
+
+R("MERENGUE SIFÓN",["POSTRE"],
+`- 300 gr de azúcar
+- 36 gr de albúmina
+- 240 gr de agua
+- 330 gr de clara`,
+`A 40 grados, velocidad 3,5, hasta que se integre todo.`),
+
+R("MOUSSE DE PIPARRA",["SALSA"],
+`- 140 gr de piparra
+- 50 gr de aceituna
+- 5 gr de mostaza
+- 45 gr de queso crema
+- 40 gr de AOVE
+- 10 gr de glucosa`,
+`Batir bien.`),
+
+R("MOUSSE DE CHOCOLATE SIFÓN",["POSTRE","CHOCOLATE"],
+`- 190 gr de cobertura de chocolate
+- 40 gr de cacao
+- 50 gr de azúcar
+- 500 gr de nata
+- 200 gr de leche`,
+`Todo a la Thermomix menos la cobertura, a 45 grados hasta que se integre, a velocidad 2,5-3.
+
+Cuando esté bien integrado, quitar el calor y añadir la cobertura; poner 5 min a velocidad 4 para que se derrita con el calor restante. Colar, meter en sifón y enfriar.`),
+
+R("NATA SIFÓN",["POSTRE"],
+`- 540 gr de nata
+- 60 gr de azúcar`,
+`Calentar un poco la nata con el azúcar para que se disuelva. Poner en el sifón y enfriar.`),
+
+R("NATILLAS",["POSTRE"],
+`- 400 gr de leche
+- 600 gr de nata
+- 360 gr de azúcar
+- Rama de vainilla
+- 30 yemas`,
+`Infusionar leche + nata + vainilla + azúcar. Mezclar las yemas y juntar todo templado. Colar y repartir en bolsas de 170 gr máximo.
+
+Cocinar al vapor desde frío: 81º durante 35 min.`),
+
+R("NATILLAS (MENÚ)",["POSTRE","DULCE"],
+`- 1 litro de leche
+- 150 gr de azúcar
+- 20 gr de maicena
+- 8 yemas
+- Rama de vainilla`,
+`Infusionar la leche con la vainilla. Mientras, mezclar el resto muy bien. Añadir a la leche caliente (colada) y mover hasta que espese. Poner en los moldes.`),
+
+R("PASTEL DE ARROZ",["POSTRE","DULCE"],
+`- 150 gr de mantequilla
+- 300 gr de azúcar
+- 100 gr de harina
+- 500 gr de leche
+- 3 huevos`,
+`Batir los huevos (reservar). Precalentar el horno a 185º. Derretir la mantequilla y añadir el azúcar, batir bien; hacer lo mismo con la harina.
+
+Añadir los huevos e integrarlos bien, luego la leche e integrar todo muy bien. Poner en molde encamisado, tapar con papel de aluminio y hornear 30 min. Quitar el aluminio y dejar otros 20 min.`),
+
+R("PASTEL DE CABRACHO",["PESCADO","ENTRANTE"],
+`- 600 gr de cabracho
+- 100 gr de salsa de tomate
+- 150 ml de nata líquida
+- 4 huevos
+- 1 pimiento del piquillo (opcional)
+- 1 zanahoria, 1 puerro, 1 cebolla
+- Mantequilla
+- 2 hojas de laurel
+- Aceite de oliva, sal
+- Pimienta negra en grano`,
+`Calentar agua con sal. Cuando hierva, añadir la zanahoria, la cebolla, el puerro, el laurel, la pimienta y un poco de aceite. Cocer 20 minutos y colar.
+
+Introducir el cabracho limpio y hervir 15 minutos. Retirar piel y espinas y desmenuzar.
+
+Batir los huevos con la salsa de tomate, la nata, el piquillo y el cabracho desmenuzado. Ajustar de sal y pimienta y triturar hasta homogeneizar.
+
+Engrasar unos moldes con mantequilla, verter la mezcla y hornear al baño maría a 180ºC sin resistencia superior, 40-45 minutos.`),
+
+R("PATATA PARA PULPO",["PESCADO","ENTRANTE"],
+`- 500 gr de patata cascada
+- 70 gr de mantequilla
+- 30 gr de aceite
+- 3 gr de pimentón
+- 6 gr de sal`,
+`Poner en bolsa al vacío (varias bolsas). Cocinar al vapor 90 min a 85º. Machacar las patatas y abatir.`),
+
+R("PEQUÍN",["SALSA"],
+`- 1/2 cucharada de trufa
+- 1/2 cucharada de mostaza
+- 2 cucharadas de hoisin
+- 2 cucharadas de Perrins
+- 1 yema
+- AOVE`,
+`Juntar todo y mezclar, luego ir añadiendo el aceite para emulsionar hasta la textura deseada.`),
+
+R("PIZKLES",["ENCURTIDO","VERDURAS"],
+`- 750 gr de vinagre
+- 1,2 L de agua
+- 160 gr de azúcar
+- Cebolla en juliana
+- Zanahoria en juliana
+- Lombarda`,
+`Repartir todo en bolsa y envasar.`),
+
+R("PORRUSALDA",["SOPA","PRINCIPAL","VERDURAS"],
+`- 500 gr de puerros
+- 1 L de caldo de verduras
+- 4 patatas
+- 2 zanahorias
+- 1 cebolla
+- 1 hoja de laurel
+- Aceite de oliva, sal
+- Pimienta negra`,
+`Pochar la cebolla picada con un poco de aceite y sal hasta que esté transparente.
+
+Retirar las hojas exteriores de los puerros, lavar bien, cortar en rodajas gruesas e incorporar. Saltear unos minutos.
+
+Añadir las zanahorias peladas y en rodajas y rehogar unos minutos más. Añadir el laurel y las patatas peladas y chascadas.
+
+Bajar el fuego, cubrir con el caldo, salpimentar y cocer 20-25 minutos hasta que estén blandas pero no deshechas. Ajustar de sal.`),
+
+R("PUERROS A BAJA TEMPERATURA",[],
+`- Puerros
+- Sal
+- AOVE`,
+`Limpiamos los puerros. Los metemos en bolsa con un chorrito de AOVE y una pizca de sal. Cocinamos a 85º durante hora y media.
+
+Para emplatar, doramos los puerros un poco en la sartén y servimos.`),
+
+R("RABO AL VINO TINTO",["PRINCIPAL","CARNE","GUISO"],
+`- 1 rabo de buey o vaca vieja
+- 1 L de caldo de carne o pollo
+- 300 ml de vino tinto
+- 3 dientes de ajo grandes
+- 2 zanahorias
+- 2 cebollas
+- Harina de trigo
+- Mantequilla (opcional)
+- 2 hojas de laurel
+- Aceite de oliva virgen extra, sal, pimienta negra`,
+`Cortar el rabo, salpimentar y enharinar ligeramente. Dorar por todos los lados en una cazuela con aceite. Reservar.
+
+Rehogar en el mismo aceite las cebollas, los ajos picados y las zanahorias en rodajas sin dejar de remover.
+
+Incorporar de nuevo la carne y su jugo, el laurel, el vino y el caldo. Cocinar a fuego medio hasta que hierva. Despumar y cocinar a fuego bajo unas 3 horas hasta que la carne se despegue del hueso.
+
+Añadir más caldo si reduce demasiado, ajustar de sal y un trozo de mantequilla para dar brillo. Servir con patatas fritas en gajos y una ramita de tomillo.`),
+
+R("SALSA BIZKAINA",["SALSA","BIZKAINA"],
+`- 20 kg de cebolla
+- 1 bolsa de choricero
+- 1 y 1/2 cabeza de ajos`,
+`En cazuela poner un chorrito de AOVE y dorar un poco los ajos. Añadir la cebolla y pocharla muy bien. Cuando esté pochada, pasarla por la Thermomix y colarla para retirar los restos.
+
+Triturar la pulpa del choricero en la Thermomix añadiendo agua casi hasta arriba; cuando esté bien triturado, añadir a la cebolla triturada y levantar.
+
+Poner a punto de sal y engordar un poco si fuera necesario con maicena.`),
+
+R("SALSA BOURBON BURGUER",["SALSA"],
+`- 1 litro de caldo
+- 50 gr de bourbon (quemar)
+- 40 gr de azúcar
+- 350 gr de yema`,
+`Poner todo en la Thermomix, 85º, velocidad 3,5, hasta que espese. Si fuese necesario, añadir un poco de maicena exprés oscura.`),
+
+R("SALSA CHOCO BLANCO",["POSTRE","CHOCOLATE"],
+`- 1.800 gr de chocolate blanco
+- 500 gr de nata`,
+`Fundir el chocolate blanco y añadir la nata; cocinar 5 minutos.`),
+
+R("SALSA DE CHOCOLATE",["POSTRE","CHOCOLATE"],
+`- 110 gr de agua
+- 375 gr de nata
+- 425 gr de azúcar
+- 200 gr de cacao
+- 125 gr de cobertura de chocolate`,
+`Calentar el agua, la nata y el azúcar hasta unificar. Sacar del fuego y añadir el cacao y la cobertura de chocolate. Batir con varillas hasta unificar.`),
+
+R("SALSA DE TOMATE (REST. BEGOÑA)",["SALSA"],
+`- 6 cebollas grandes
+- 1 lata de pimiento del piquillo
+- 2 latas grandes de tomate triturado
+- 1 cucharada sopera de azúcar por cada kg de tomate
+- Aceite, sal`,
+`Pochar la cebolla cortada en juliana con un chorrito de aceite y sal. Cuando esté bien pochada, añadir los pimientos y un poco de tomate.
+
+Triturar bien la mezcla con la batidora, luego añadir el resto del tomate y cocinar bien. Corregir de sal. Cuando esté bien cocinado, pasar por el pasapurés.
+
+Levantarlo para que recupere color. Abatir.`),
+
+R("SALSA RUBIA",["SALSA"],
+`- 10 cebollas
+- 2 puerros
+- 4 zanahorias
+- Caramelo
+- Harina, agua
+- 4 pastillas de Extarlux`,
+`Pochar las verduras. Añadir el tomate, las pastillas, la harina y rehogar. Añadir el caramelo (6 montoncitos) y agua.
+
+Triturar todo bien y pasar por el chino. Corregir de sal y volver a cocer para que vuelva a coger color. Abatir lo más rápido posible.`),
+
+R("SALSA TRUFA BURGUER",["SALSA"],
+`- 1 L de caldo
+- 350 gr de tartufata
+- 18 gr de gelespesa
+- 7 gr de sal`,
+`Todo a la Thermomix, 85º, velocidad 3, hasta que espese.`),
+
+R("SIFÓN DE BERENJENA",["SIFON"],
+`- 150 gr de patata
+- 350 gr de berenjena
+- 30 gr de aceite de rúcula
+- 6 gr de sal
+- 150 gr de nata
+- 100 gr de agua
+- 20 gr de pro soufflé (20 albúmina, 2 xantana)`,
+`Thermomix 10 min a velocidad 6, a 85º.`),
+
+R("SIFÓN DE PATATA",["SIFON","PATATA"],
+`- 500 gr de patata cascada
+- 250 gr de nata
+- 200 gr de agua
+- 6 gr de sal
+- 30 gr de aceite
+- 10 gr de pro soufflé (10 albúmina, 1,5 xantana)`,
+`Thermomix 10 min a velocidad 6, a 85º.`),
+
+R("SIFÓN DE PESTO",["ENSALADA","ENTRANTE","SALSA"],
+`- 400 gr de pesto
+- 50 gr de idiazábal
+- 150 gr de almendras (o anacardos)
+- 100 gr de agua
+- 200 gr de aceite`,
+`Triturar todo y meter en el sifón.`),
+
+R("SOPA DE PESCADO",["SOPA","PESCADO","ENTRANTE"],
+`- 2,5 kg de cebolla
+- 950 gr de zanahoria
+- 1/2 lata de tomate triturado
+- 1 kg de langostinos
+- 1 cazo de salsa bizkaina
+- 1 buen chorro de brandy
+- Cascotes de pescado o morralla
+- 1 barra de pan (frita o tostada al horno)`,
+`Preparar el fumet, tostando si se puede los cascotes de pescado.
+
+Pochar la cebolla y zanahoria en juliana con un chorrito de AOVE. Añadir los cascotes cuando esté pochada. Chorrito de coñac y flambear. Añadir el pan frito.
+
+Añadir el tomate y la bizkaina, y cocinar un poco. Añadir el fumet y algún trozo de espina. Triturar todo y pasar por el chino.
+
+Levantar al fuego otra vez y corregir de sal. Abatir lo más rápido posible.`),
+
+R("TARTA DE CHOCOLATE GORDOS",["POSTRE","CHOCOLATE"],
+`- 495 gr de chocolate (54,5%)
+- 480 gr de mantequilla
+- 390 gr de huevos
+- 390 gr de azúcar
+- 120 gr de harina`,
+`Derretir el chocolate y la mantequilla al baño maría. Cuando atempere un poco, añadir el azúcar e integrar; hacer lo mismo con los huevos bien batidos, y por último la harina tamizada.
+
+Poner en moldes de 26 cm y hornear a 200º unos 120 minutos.`),
+
+R("TARTA DE CHOCOLATE FRÍA",["POSTRE","CHOCOLATE"],
+`- 575 gr de leche
+- 288 gr de nata
+- 300 gr de chocolate
+- 100 gr de azúcar
+- 15 gr de gelatina`,
+`Reservar 50 gr de leche. Meter el resto en la Thermomix a 85º, velocidad 2,5. Mientras, hidratar la gelatina en la leche reservada.
+
+Cuando esté a 85º, añadir la gelatina y dejar otros 5 min en la Thermomix sin temperatura. Poner en el molde y, cuando enfríe un poco, meter en la nevera unas 4 horas hasta que cuaje.`),
+
+R("TARTA DE QUESO HORNEADA",["POSTRE","QUESO","DULCE"],
+`- 620 gr de queso crema
+- 30 gr de queso idiazábal
+- 600 gr de nata
+- 220 gr de azúcar
+- 3 huevos
+- 160 gr de galleta
+- 80 gr de mantequilla`,
+`Para un molde de 26 cm: triturar la galleta y añadir la mantequilla derretida; poner el molde en la nevera o congelador.
+
+Añadir el resto de ingredientes a la Thermomix a velocidad 6, 65º. Precalentar el horno a 235º.
+
+Cuando llegue a los 65º, verter todo en el molde y hornear 4 min a 235º. Enfriar unas 4 horas.`),
+
+R("TOFFE DE MAÍZ",["ENTRANTE"],
+`- 500 gr de azúcar
+- 80 gr de agua
+- 450 gr de maíz`,
+`Hacer el caramelo y, cuando esté rubio, añadir el maíz y dejar cocinar 15 minutos. Triturar muy bien y colar.`),
+
+R("TRUFAS DE CHOCOLATE",["POSTRE","CHOCOLATE"],
+`- 750 gr de chocolate
+- 250 gr de nata
+- Cacao en polvo`,
+`Derretir el chocolate al baño maría. Calentar la nata hasta hervir, añadir el chocolate fundido y remover hasta integrar. Cuando atempere, meter en la nevera 2-3 horas hasta que endurezca y sea manejable.
+
+Hacer bolas y pasarlas por cacao. Guardar en la nevera.`),
+
+R("VERDINAS CON ALMEJAS",["ENTRANTE","PRINCIPAL","GUISO"],
+`- 350 gr de verdinas
+- 300 gr de almejas
+- 1 cebolla
+- 1 diente de ajo
+- 1 tomate
+- 1/2 cabeza de ajos
+- 1 vaso de vino blanco
+- 1 cucharada de harina
+- 1 cucharadita de pimentón dulce
+- 1 hoja de laurel
+- Aceite de oliva
+- Sal fina y gorda`,
+`Poner la noche anterior las verdinas en remojo. Al día siguiente, cocerlas con la 1/2 cabeza de ajos, la cebolla, el tomate, sal y laurel.
+
+Aparte, poner las almejas en remojo con agua y sal gorda 2 horas.
+
+Picar el diente de ajo y rehogarlo en aceite. Añadir la harina, remover, incorporar el pimentón y, antes de que coja color, verter el vino blanco. Dejar evaporar el alcohol y agregar las almejas; en cuanto se abran, apagar el fuego.
+
+Retirar la verdura de la olla y batir la cebolla y el tomate con un poco del caldo de las judías.
+
+Calentar de nuevo la olla, añadir las almejas con la salsa y cocer un par de minutos más para ligarlo todo. Servir bien caliente.`),
+
+R("ZURRUKUTUNA",["PESCADO","SOPA"],
+`- 250 gr de bacalao desalado
+- 3 pimientos choriceros
+- 100 gr de pan de sopa
+- 6 dientes de ajo
+- 1,5 L de caldo de verdura
+- 2 huevos
+- Aceite de oliva virgen extra, sal
+- 1 trozo de guindilla
+- 1 cucharadita de pimentón dulce
+- Perejil`,
+`Calienta agua en una cazuela. Retira tallos y semillas de los pimientos choriceros y cuécelos 15 minutos. Ábrelos y retira la pulpa; pícala y resérvala.
+
+Calienta a fuego suave un chorrito de aceite, añade los ajos pelados y dóralos sin que se quemen.
+
+Corta el pan de sopa en rodajas finas e incorpóralo. Rehógalo un poco y añade el pimentón y un trocito de guindilla. Cubre con el agua, sazona y cocina 15-20 minutos, removiendo con una varilla para deshacer el pan.
+
+Incorpora la pulpa del pimiento choricero y el bacalao en daditos. Sigue removiendo hasta integrar bien.
+
+Retira del fuego, casca los huevos y remuévelos bien con la varilla. Sirve decorando con perejil.`),
+];
+
+/* =========================================================
+   ESTADO Y PERSISTENCIA
+   ========================================================= */
+let recipes = [];
+let supabase = null;
+let filter = { q: "", cats: new Set() };
+let editingId = null;
+
+const LS_DATA = "recetas_data_v1";
+const LS_URL = "recetas_sb_url";
+const LS_KEY = "recetas_sb_key";
+
+function trySupabase(){
+  const url = localStorage.getItem(LS_URL);
+  const key = localStorage.getItem(LS_KEY);
+  if(url && key){
+    try{ supabase = window.supabase.createClient(url, key); }catch(e){ supabase = null; }
+  }
+  updateSyncStatus();
+}
+
+function updateSyncStatus(){
+  const dot = document.getElementById("syncDot");
+  const text = document.getElementById("syncText");
+  if(supabase){ dot.classList.add("on"); text.textContent = "Sincronizado con Supabase"; }
+  else { dot.classList.remove("on"); text.textContent = "Guardando solo en este navegador"; }
+}
+
+async function loadData(){
+  if(supabase){
+    try{
+      const { data, error } = await supabase.from("recetas_store").select("data").eq("id","main").maybeSingle();
+      if(error) throw error;
+      if(data && data.data){ recipes = data.data; return; }
+      // no row yet -> seed it
+      recipes = SEED;
+      await persist();
+      return;
+    }catch(e){
+      console.warn("Fallo Supabase, uso local:", e);
+    }
+  }
+  const local = localStorage.getItem(LS_DATA);
+  recipes = local ? JSON.parse(local) : SEED;
+}
+
+let saveTimer = null;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, 250);
+}
+
+async function persist(){
+  localStorage.setItem(LS_DATA, JSON.stringify(recipes));
+  if(supabase){
+    try{
+      await supabase.from("recetas_store").upsert({ id:"main", data: recipes, updated_at: new Date().toISOString() });
+    }catch(e){ console.warn("No se pudo guardar en Supabase:", e); }
+  }
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function allCatsInUse(){
+  const set = new Set(MASTER_CATS);
+  recipes.forEach(r => r.categorias.forEach(c => set.add(c)));
+  return Array.from(set);
+}
+
+function renderChips(){
+  const el = document.getElementById("chips");
+  el.innerHTML = "";
+  const all = document.createElement("button");
+  all.className = "chip" + (filter.cats.size===0 ? " active" : "");
+  all.textContent = "Todas";
+  all.onclick = () => { filter.cats.clear(); renderChips(); renderGrid(); };
+  el.appendChild(all);
+  allCatsInUse().forEach(cat => {
+    const b = document.createElement("button");
+    b.className = "chip" + (filter.cats.has(cat) ? " active" : "");
+    b.textContent = cat.charAt(0) + cat.slice(1).toLowerCase();
+    b.onclick = () => {
+      filter.cats.has(cat) ? filter.cats.delete(cat) : filter.cats.add(cat);
+      renderChips(); renderGrid();
+    };
+    el.appendChild(b);
+  });
+}
+
+function matchesFilter(r){
+  const q = filter.q.trim().toLowerCase();
+  if(q && !r.nombre.toLowerCase().includes(q)) return false;
+  if(filter.cats.size){
+    for(const c of filter.cats){ if(!r.categorias.includes(c)) return false; }
+  }
+  return true;
+}
+
+const PLATE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#f4efdf" stroke-width="1.3"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/></svg>`;
+
+function renderGrid(){
+  const grid = document.getElementById("grid");
+  const empty = document.getElementById("emptyState");
+  grid.innerHTML = "";
+  const list = recipes.filter(matchesFilter).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  empty.hidden = list.length !== 0;
+  list.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "rcard";
+    card.onclick = () => openView(r.id);
+    const media = r.imagen
+      ? `<div class="rcard-media"><img src="${escapeAttr(r.imagen)}" alt=""></div>`
+      : `<div class="rcard-media">${PLATE_SVG}</div>`;
+    const pills = r.categorias.map(c=>`<span class="pill">${escapeHtml(c)}</span>`).join("");
+    const unfilled = (!r.ingredientes && !r.receta) ? `<div class="unfilled">Sin completar todavía</div>` : "";
+    card.innerHTML = `${media}<div class="rcard-body"><h3>${escapeHtml(r.nombre)}</h3>${unfilled}<div class="pills">${pills}</div></div>`;
+    grid.appendChild(card);
+  });
+}
+
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+/* ---------- View modal ---------- */
+function openView(id){
+  const r = recipes.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById("viewBackdrop").hidden = false;
+  document.getElementById("viewBackdrop").dataset.id = id;
+  document.getElementById("viewTitle").textContent = r.nombre;
+  const cover = document.getElementById("viewCover");
+  if(r.imagen){ cover.src = r.imagen; cover.hidden = false; } else { cover.hidden = true; }
+  document.getElementById("viewCats").innerHTML = r.categorias.map(c=>`<span class="pill">${escapeHtml(c)}</span>`).join("");
+  const ing = document.getElementById("viewIng");
+  const steps = document.getElementById("viewSteps");
+  if(!r.ingredientes && !r.receta){
+    ing.innerHTML = "";
+    steps.innerHTML = `<p class="placeholder-note">Todavía sin completar. Pulsa "Editar" para añadir los ingredientes y la elaboración.</p>`;
+  }else{
+    ing.innerHTML = (r.ingredientes||"").split("\n").filter(l=>l.trim()).map(l=>`<li>${escapeHtml(l.replace(/^-\s*/,""))}</li>`).join("");
+    steps.innerHTML = (r.receta||"").split(/\n\s*\n/).filter(p=>p.trim()).map(p=>`<p>${escapeHtml(p).replace(/\n/g,"<br>")}</p>`).join("");
+  }
+}
+
+/* ---------- Edit modal ---------- */
+let editCats = new Set();
+function openEdit(id){
+  editingId = id;
+  const r = id ? recipes.find(x=>x.id===id) : null;
+  document.getElementById("editHeading").textContent = r ? "Editar receta" : "Nueva receta";
+  document.getElementById("fNombre").value = r ? r.nombre : "";
+  document.getElementById("fImagen").value = r ? r.imagen : "";
+  document.getElementById("fIng").value = r ? r.ingredientes : "";
+  document.getElementById("fReceta").value = r ? r.receta : "";
+  editCats = new Set(r ? r.categorias : []);
+  renderCatGrid();
+  document.getElementById("viewBackdrop").hidden = true;
+  document.getElementById("editBackdrop").hidden = false;
+}
+
+function renderCatGrid(){
+  const el = document.getElementById("fCatGrid");
+  el.innerHTML = "";
+  allCatsInUse().forEach(cat => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cat-toggle" + (editCats.has(cat) ? " on" : "");
+    b.textContent = cat.charAt(0) + cat.slice(1).toLowerCase();
+    b.onclick = () => { editCats.has(cat) ? editCats.delete(cat) : editCats.add(cat); renderCatGrid(); };
+    el.appendChild(b);
+  });
+}
+
+function saveRecipeForm(){
+  const nombre = document.getElementById("fNombre").value.trim();
+  if(!nombre){ alert("Ponle un nombre a la receta."); return; }
+  const imagen = document.getElementById("fImagen").value.trim();
+  const ingredientes = document.getElementById("fIng").value;
+  const receta = document.getElementById("fReceta").value;
+  const categorias = Array.from(editCats);
+  if(editingId){
+    const r = recipes.find(x=>x.id===editingId);
+    Object.assign(r, {nombre, imagen, ingredientes, receta, categorias});
+  }else{
+    recipes.push({id:crypto.randomUUID(), nombre, imagen, ingredientes, receta, categorias});
+  }
+  scheduleSave();
+  closeAllModals();
+  renderChips(); renderGrid();
+}
+
+function deleteRecipe(id){
+  if(!confirm("¿Eliminar esta receta? No se puede deshacer.")) return;
+  recipes = recipes.filter(r=>r.id!==id);
+  scheduleSave();
+  closeAllModals();
+  renderChips(); renderGrid();
+}
+
+function closeAllModals(){
+  document.getElementById("viewBackdrop").hidden = true;
+  document.getElementById("editBackdrop").hidden = true;
+  document.getElementById("settingsBackdrop").hidden = true;
+}
+
+/* =========================================================
+   EVENTOS
+   ========================================================= */
+document.getElementById("search").addEventListener("input", e => { filter.q = e.target.value; renderGrid(); });
+document.getElementById("clearFilters").addEventListener("click", () => { filter = {q:"",cats:new Set()}; document.getElementById("search").value=""; renderChips(); renderGrid(); });
+document.getElementById("btnNew").addEventListener("click", () => openEdit(null));
+document.getElementById("btnEditFromView").addEventListener("click", () => openEdit(document.getElementById("viewBackdrop").dataset.id));
+document.getElementById("btnDeleteFromView").addEventListener("click", () => deleteRecipe(document.getElementById("viewBackdrop").dataset.id));
+document.getElementById("btnSaveRecipe").addEventListener("click", saveRecipeForm);
+document.getElementById("fCatAdd").addEventListener("click", () => {
+  const inp = document.getElementById("fCatNew");
+  const v = inp.value.trim().toUpperCase();
+  if(v){ editCats.add(v); inp.value=""; renderCatGrid(); }
+});
+
+document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeAllModals));
+document.querySelectorAll(".backdrop").forEach(bd => bd.addEventListener("click", e => { if(e.target===bd) closeAllModals(); }));
+
+document.getElementById("btnSync").addEventListener("click", () => {
+  document.getElementById("sbUrl").value = localStorage.getItem(LS_URL) || "";
+  document.getElementById("sbKey").value = localStorage.getItem(LS_KEY) || "";
+  document.getElementById("settingsBackdrop").hidden = false;
+});
+document.getElementById("btnSaveSettings").addEventListener("click", async () => {
+  const url = document.getElementById("sbUrl").value.trim();
+  const key = document.getElementById("sbKey").value.trim();
+  if(!url || !key){ alert("Rellena la URL y la key antes de guardar."); return; }
+  if(typeof window.supabase === "undefined"){
+    alert("No se ha podido cargar la librería de Supabase (revisa tu conexión a internet y recarga la página). Los datos se seguirán guardando solo en este navegador.");
+    return;
+  }
+  const btn = document.getElementById("btnSaveSettings");
+  const originalText = btn.textContent;
+  btn.textContent = "Comprobando conexión…";
+  btn.disabled = true;
+  try{
+    const testClient = window.supabase.createClient(url, key);
+    const { error } = await testClient.from("recetas_store").select("id").limit(1);
+    if(error) throw error;
+    localStorage.setItem(LS_URL, url);
+    localStorage.setItem(LS_KEY, key);
+    trySupabase();
+    await loadData();
+    renderChips(); renderGrid();
+    closeAllModals();
+  }catch(e){
+    alert("No se pudo conectar con Supabase:\n\n" + (e.message || e) + "\n\nRevisa que la URL y la key sean correctas y que hayas ejecutado el SQL que crea la tabla \"recetas_store\".");
+  }finally{
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+});
+document.getElementById("btnDisconnect").addEventListener("click", () => {
+  localStorage.removeItem(LS_URL); localStorage.removeItem(LS_KEY);
+  supabase = null; updateSyncStatus();
+  closeAllModals();
+});
+document.getElementById("btnExport").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(recipes,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "recetas.json";
+  a.click();
+});
+document.getElementById("btnImportTrigger").addEventListener("click", () => document.getElementById("btnImportFile").click());
+document.getElementById("btnImportFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const text = await file.text();
+  try{
+    const data = JSON.parse(text);
+    if(Array.isArray(data)){
+      recipes = data;
+      scheduleSave();
+      renderChips(); renderGrid();
+      closeAllModals();
+      alert("Recetas importadas correctamente.");
+    }
+  }catch(e){ alert("El archivo no es un JSON válido."); }
+});
+
+/* =========================================================
+   ARRANQUE
+   ========================================================= */
+(async function init(){
+  trySupabase();
+  await loadData();
+  renderChips();
+  renderGrid();
+})();
+</script>
+</body>
+</html>
