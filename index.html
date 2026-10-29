@@ -1305,13 +1305,70 @@ function scheduleSave(){
   saveTimer = setTimeout(persist, 250);
 }
 
+/* Guarda primero en Supabase y después una copia en el navegador.
+   Si la copia local no cabe, no pasa nada: lo importante es Supabase.
+   Si Supabase falla, avisa en pantalla en vez de callarse. */
 async function persist(){
-  localStorage.setItem(LS_DATA, JSON.stringify(recipes));
+  let okNube = true;
   if(supabaseClient){
     try{
-      await supabaseClient.from("recetas_store").upsert({ id:"main", data: recipes, updated_at: new Date().toISOString() });
-    }catch(e){ console.warn("No se pudo guardar en Supabase:", e); }
+      const { error } = await supabaseClient.from("recetas_store")
+        .upsert({ id:"main", data: recipes, updated_at: new Date().toISOString() });
+      if(error) throw error;
+    }catch(e){
+      okNube = false;
+      console.warn("No se pudo guardar en Supabase:", e);
+      alert("¡Ojo! No se han podido guardar los cambios en la nube.\n\n" + (e.message || e) + "\n\nNo cierres la app y vuelve a intentarlo en un rato.");
+    }
   }
+  try{
+    localStorage.setItem(LS_DATA, JSON.stringify(recipes));
+  }catch(e){
+    console.warn("La copia local no cabe en el navegador:", e);
+    if(!supabaseClient) alert("No queda espacio en este navegador para guardar las recetas. Conecta Supabase en ⚙ para no perder cambios.");
+  }
+  return okNube;
+}
+
+/* =========================================================
+   FOTOS EN SUPABASE STORAGE
+   Cada foto se sube como archivo al almacén "recetas-fotos"
+   y en la receta solo se guarda su enlace.
+   ========================================================= */
+const BUCKET_FOTOS = "recetas-fotos";
+
+async function dataUrlToBlob(dataUrl){
+  const res = await fetch(dataUrl);
+  return await res.blob();
+}
+
+async function subirFoto(dataUrl){
+  const blob = await dataUrlToBlob(dataUrl);
+  const ruta = crypto.randomUUID() + ".jpg";
+  const { error } = await supabaseClient.storage.from(BUCKET_FOTOS)
+    .upload(ruta, blob, { contentType: "image/jpeg", upsert: false });
+  if(error) throw error;
+  const { data } = supabaseClient.storage.from(BUCKET_FOTOS).getPublicUrl(ruta);
+  return data.publicUrl;
+}
+
+/* Pasa al almacén las fotos que aún están metidas dentro de las recetas
+   (las antiguas en formato data:). Se hace una sola vez y en segundo plano. */
+async function migrarFotosAntiguas(){
+  if(!supabaseClient) return;
+  const pendientes = recipes.filter(r => (r.imagen || "").startsWith("data:"));
+  if(!pendientes.length) return;
+  let hechas = 0;
+  for(const r of pendientes){
+    try{
+      r.imagen = await subirFoto(r.imagen);
+      hechas++;
+    }catch(e){
+      console.warn("No se pudo pasar la foto de " + r.nombre + ":", e);
+    }
+  }
+  if(hechas) await persist();
+  console.log(`Fotos pasadas al almacén: ${hechas} de ${pendientes.length}`);
 }
 
 /* =========================================================
@@ -1502,14 +1559,29 @@ function resizeImageFile(file, maxDim){
 document.getElementById("fImagenFile").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if(!file) return;
+  const btnGuardar = document.getElementById("btnSaveRecipe");
+  const textoBoton = btnGuardar.textContent;
   try{
     const dataUrl = await resizeImageFile(file, 900);
-    document.getElementById("fImagen").value = dataUrl;
     const preview = document.getElementById("fImagenPreview");
     preview.src = dataUrl;
     document.getElementById("fImagenPreviewWrap").hidden = false;
+    if(supabaseClient){
+      btnGuardar.disabled = true;
+      btnGuardar.textContent = "Subiendo foto…";
+      document.getElementById("fImagen").value = await subirFoto(dataUrl);
+    }else{
+      // Sin conexión a Supabase la foto se queda dentro de la receta, como antes
+      document.getElementById("fImagen").value = dataUrl;
+    }
   }catch(err){
-    alert("No se pudo procesar la imagen.");
+    console.warn(err);
+    alert("No se pudo subir la foto.\n\n" + (err.message || err) + "\n\nComprueba la conexión y vuelve a elegirla.");
+    document.getElementById("fImagenFile").value = "";
+    document.getElementById("fImagenPreviewWrap").hidden = true;
+  }finally{
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = textoBoton;
   }
 });
 
@@ -1648,6 +1720,7 @@ document.getElementById("btnImportFile").addEventListener("change", async e => {
   await loadData();
   renderChips();
   renderGrid();
+  await migrarFotosAntiguas();
 })();
 </script>
 </body>
